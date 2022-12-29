@@ -173,7 +173,7 @@ module e203_subsys_nice_core (
   //                           custom3_sbuf    ? SBUF   :
   //                           custom3_rowsum  ? ROWSUM :
 	// 		    IDLE;
-   assign state_idle_nxt = custom3_compute ? compute : IDLE;   
+   assign state_idle_nxt = custom3_compute ? COMPUTE : IDLE;   
 
   //  wire lbuf_icb_rsp_hsked_last; 
   //  assign state_lbuf_exit_ena = state_is_lbuf & lbuf_icb_rsp_hsked_last; 
@@ -223,22 +223,27 @@ module e203_subsys_nice_core (
    assign compute_ena = custom3_compute & nice_req_hsked;
    assign compute_go_nxt = compute_ena ? 1'b1 : 1'b0;
 
-   sirv_gnrl_dfflr #(1)   compute_go_dfflr (compute_ena, compute_go_nxt, compute_go_r, nice_clk, nice_rst_n);
+   sirv_gnrl_dfflr #(1)   compute_go_dfflr (1'b1, compute_go_nxt, compute_go_r, nice_clk, nice_rst_n);
+
+   wire result_ready;
+   wire result_ready_nxt;
+   wire result_ready_r;
+   wire [3:0] result_digit_nxt;
+   wire [3:0] result_digit_r;
 
    lenet_top i_lenet_top(
       .clk(nice_clk),
       .rst_n(nice_rst_n),
       .go(compute_go_r),
-      .ready(),
-      .digit()
+      .ready(result_ready),
+      .digit(result_digit_nxt)
    );
+   sirv_gnrl_dfflr #(1)   compute_result_dfflr (result_ready, result_digit_nxt, result_digit_r, nice_clk, nice_rst_n);
+   assign result_ready_nxt = result_ready;
+   sirv_gnrl_dfflr #(1)   compute_result_dfflr (result_ready, result_ready_nxt, result_ready_r, nice_clk, nice_rst_n);
+   // nice_rsp_valid wait for nice_icb_rsp_valid in COMPUTE
+   assign nice_rsp_valid_compute = state_is_compute & result_ready_r;
 
-
-   // nice_rsp_valid wait for nice_icb_rsp_valid in LBUF
-   assign nice_rsp_valid_lbuf = state_is_lbuf & lbuf_cnt_last & nice_icb_rsp_valid;
-
-   // nice_icb_cmd_valid sets when lbuf_cnt_r is not full in LBUF
-   assign nice_icb_cmd_valid_lbuf = (state_is_lbuf & (lbuf_cnt_r < clonum));
 
    //////////// 1. custom3_lbuf
    wire [ROWBUF_IDX_W-1:0] lbuf_cnt_r; 
@@ -485,8 +490,8 @@ module e203_subsys_nice_core (
    ////////////////////////////////////////////////////////////
    assign nice_rsp_hsked = nice_rsp_valid & nice_rsp_ready; 
    assign nice_icb_rsp_hsked = nice_icb_rsp_valid & nice_icb_rsp_ready;
-   assign nice_rsp_valid = nice_rsp_valid_rowsum | nice_rsp_valid_sbuf | nice_rsp_valid_lbuf;
-   assign nice_rsp_rdat  = {`E203_XLEN{state_is_rowsum}} & rowsum_res;
+   assign nice_rsp_valid = nice_rsp_valid_compute;
+   assign nice_rsp_rdat  = {`E203_XLEN{state_is_compute}} & result_digit_r;
 
    // memory access bus error
    //assign nice_rsp_err_irq  =   (nice_icb_rsp_hsked & nice_icb_rsp_err)
@@ -505,25 +510,21 @@ module e203_subsys_nice_core (
    //assign nice_icb_rsp_ready = state_is_ldst_rsp & nice_rsp_ready; 
    // rsp always ready
    assign nice_icb_rsp_ready = 1'b1; 
-   wire [ROWBUF_IDX_W-1:0] sbuf_idx = sbuf_cmd_cnt_r; 
 
-   assign nice_icb_cmd_valid =   (state_is_idle & nice_req_valid & custom_mem_op)
-                              | nice_icb_cmd_valid_lbuf
-                              | nice_icb_cmd_valid_sbuf
-                              | nice_icb_cmd_valid_rowsum
-                              ;
-   assign nice_icb_cmd_addr  = (state_is_idle & custom_mem_op) ? nice_req_rs1 :
-                              maddr_acc_r;
-   assign nice_icb_cmd_read  = (state_is_idle & custom_mem_op) ? (custom3_lbuf | custom3_rowsum) : 
-                              state_is_sbuf ? 1'b0 : 
-                              1'b1;
-   assign nice_icb_cmd_wdata = (state_is_idle & custom3_sbuf) ? rowbuf_r[sbuf_idx] :
-                              state_is_sbuf ? rowbuf_r[sbuf_idx] : 
-                              `E203_XLEN'b0; 
+   // assign nice_icb_cmd_valid =   (state_is_idle & nice_req_valid & custom_mem_op)
+   //                            | nice_icb_cmd_valid_lbuf
+   //                            | nice_icb_cmd_valid_sbuf
+   //                            | nice_icb_cmd_valid_rowsum
+   //                            | nice_icb_cmd_valid_compute
+   //                            ;
+   assign nice_icb_cmd_valid = 1'b0;
+   assign nice_icb_cmd_addr  = {`E203_ADDR_SIZE{1'b0}};
+   assign nice_icb_cmd_read  = 1'b0;
+   assign nice_icb_cmd_wdata = `E203_XLEN'b0; 
 
    //assign nice_icb_cmd_wmask = {`sirv_XLEN_MW{custom3_sbuf}} & 4'b1111;
    assign nice_icb_cmd_size  = 2'b10;
-   assign nice_mem_holdup    =  state_is_lbuf | state_is_sbuf | state_is_rowsum; 
+   assign nice_mem_holdup    = state_is_compute; 
 
    ////////////////////////////////////////////////////////////
    // nice_active
