@@ -13,5 +13,5 @@ module src_rom(
 		if (!rst_n)			qa <= 0;
 		else if (!cena)		qa <= mem[aa];
 
-    $readmemh("E:/lenet/jisy_cnn/cnn_lite/test_data/data_txt/test_4.txt", $root.tb_txt.src_rom.mem);
+    $readmemh("E:/lenet/jisy_cnn/cnn_lite/test_data/data_txt/test_4.txt", mem);
 endmodule

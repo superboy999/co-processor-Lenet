@@ -238,11 +238,12 @@ module e203_subsys_nice_core (
       .ready(result_ready),
       .digit(result_digit_nxt)
    );
-   sirv_gnrl_dfflr #(1)   compute_result_dfflr (result_ready, result_digit_nxt, result_digit_r, nice_clk, nice_rst_n);
+   sirv_gnrl_dfflr #(4)   compute_result_dfflr (result_ready, result_digit_nxt, result_digit_r, nice_clk, nice_rst_n);
    assign result_ready_nxt = result_ready;
    sirv_gnrl_dfflr #(1)   compute_ready_dfflr (result_ready, result_ready_nxt, result_ready_r, nice_clk, nice_rst_n);
    // nice_rsp_valid wait for nice_icb_rsp_valid in COMPUTE
    assign nice_rsp_valid_compute = state_is_compute & result_ready_r;
+   assign compute_done = result_ready_r;
 
    always@(posedge nice_clk) begin
       if(result_ready)
