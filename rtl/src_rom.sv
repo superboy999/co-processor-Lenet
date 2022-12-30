@@ -12,6 +12,8 @@ module src_rom(
 	always @(posedge clk or negedge rst_n)
 		if (!rst_n)			qa <= 0;
 		else if (!cena)		qa <= mem[aa];
+	initial begin
+		$readmemh("E:/lenet/jisy_cnn/cnn_lite/test_data/data_txt/test_4.txt", mem);
+	end
 
-    $readmemh("E:/lenet/jisy_cnn/cnn_lite/test_data/data_txt/test_4.txt", mem);
 endmodule
