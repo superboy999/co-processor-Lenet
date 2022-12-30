@@ -244,240 +244,244 @@ module e203_subsys_nice_core (
    // nice_rsp_valid wait for nice_icb_rsp_valid in COMPUTE
    assign nice_rsp_valid_compute = state_is_compute & result_ready_r;
 
+   always@(posedge nice_clk) begin
+      if(result_ready)
+         $display("Co-processor output: The digit is %d \n",result_digit_nxt);
+   end
 
-   //////////// 1. custom3_lbuf
-   wire [ROWBUF_IDX_W-1:0] lbuf_cnt_r; 
-   wire [ROWBUF_IDX_W-1:0] lbuf_cnt_nxt; 
-   wire lbuf_cnt_clr;
-   wire lbuf_cnt_incr;
-   wire lbuf_cnt_ena;
-   wire lbuf_cnt_last;
-   wire lbuf_icb_rsp_hsked;
-   wire nice_rsp_valid_lbuf;
-   wire nice_icb_cmd_valid_lbuf;
+   // //////////// 1. custom3_lbuf
+   // wire [ROWBUF_IDX_W-1:0] lbuf_cnt_r; 
+   // wire [ROWBUF_IDX_W-1:0] lbuf_cnt_nxt; 
+   // wire lbuf_cnt_clr;
+   // wire lbuf_cnt_incr;
+   // wire lbuf_cnt_ena;
+   // wire lbuf_cnt_last;
+   // wire lbuf_icb_rsp_hsked;
+   // wire nice_rsp_valid_lbuf;
+   // wire nice_icb_cmd_valid_lbuf;
 
-   assign lbuf_icb_rsp_hsked = state_is_lbuf & nice_icb_rsp_hsked;
-   assign lbuf_icb_rsp_hsked_last = lbuf_icb_rsp_hsked & lbuf_cnt_last;
-   assign lbuf_cnt_last = (lbuf_cnt_r == clonum);
-   assign lbuf_cnt_clr = custom3_lbuf & nice_req_hsked;
-   assign lbuf_cnt_incr = lbuf_icb_rsp_hsked & ~lbuf_cnt_last;
-   assign lbuf_cnt_ena = lbuf_cnt_clr | lbuf_cnt_incr;
-   assign lbuf_cnt_nxt =   ({ROWBUF_IDX_W{lbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
-                         | ({ROWBUF_IDX_W{lbuf_cnt_incr}} & (lbuf_cnt_r + 1'b1) )
-                         ;
+   // assign lbuf_icb_rsp_hsked = state_is_lbuf & nice_icb_rsp_hsked;
+   // assign lbuf_icb_rsp_hsked_last = lbuf_icb_rsp_hsked & lbuf_cnt_last;
+   // assign lbuf_cnt_last = (lbuf_cnt_r == clonum);
+   // assign lbuf_cnt_clr = custom3_lbuf & nice_req_hsked;
+   // assign lbuf_cnt_incr = lbuf_icb_rsp_hsked & ~lbuf_cnt_last;
+   // assign lbuf_cnt_ena = lbuf_cnt_clr | lbuf_cnt_incr;
+   // assign lbuf_cnt_nxt =   ({ROWBUF_IDX_W{lbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
+   //                       | ({ROWBUF_IDX_W{lbuf_cnt_incr}} & (lbuf_cnt_r + 1'b1) )
+   //                       ;
 
-   sirv_gnrl_dfflr #(ROWBUF_IDX_W)   lbuf_cnt_dfflr (lbuf_cnt_ena, lbuf_cnt_nxt, lbuf_cnt_r, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(ROWBUF_IDX_W)   lbuf_cnt_dfflr (lbuf_cnt_ena, lbuf_cnt_nxt, lbuf_cnt_r, nice_clk, nice_rst_n);
 
-   // nice_rsp_valid wait for nice_icb_rsp_valid in LBUF
-   assign nice_rsp_valid_lbuf = state_is_lbuf & lbuf_cnt_last & nice_icb_rsp_valid;
+   // // nice_rsp_valid wait for nice_icb_rsp_valid in LBUF
+   // assign nice_rsp_valid_lbuf = state_is_lbuf & lbuf_cnt_last & nice_icb_rsp_valid;
 
-   // nice_icb_cmd_valid sets when lbuf_cnt_r is not full in LBUF
-   assign nice_icb_cmd_valid_lbuf = (state_is_lbuf & (lbuf_cnt_r < clonum));
+   // // nice_icb_cmd_valid sets when lbuf_cnt_r is not full in LBUF
+   // assign nice_icb_cmd_valid_lbuf = (state_is_lbuf & (lbuf_cnt_r < clonum));
 
-   //////////// 2. custom3_sbuf
-   wire [ROWBUF_IDX_W-1:0] sbuf_cnt_r; 
-   wire [ROWBUF_IDX_W-1:0] sbuf_cnt_nxt; 
-   wire sbuf_cnt_clr;
-   wire sbuf_cnt_incr;
-   wire sbuf_cnt_ena;
-   wire sbuf_cnt_last;
-   wire sbuf_icb_cmd_hsked;
-   wire sbuf_icb_rsp_hsked;
-   wire nice_rsp_valid_sbuf;
-   wire nice_icb_cmd_valid_sbuf;
-   wire nice_icb_cmd_hsked;
+   // //////////// 2. custom3_sbuf
+   // wire [ROWBUF_IDX_W-1:0] sbuf_cnt_r; 
+   // wire [ROWBUF_IDX_W-1:0] sbuf_cnt_nxt; 
+   // wire sbuf_cnt_clr;
+   // wire sbuf_cnt_incr;
+   // wire sbuf_cnt_ena;
+   // wire sbuf_cnt_last;
+   // wire sbuf_icb_cmd_hsked;
+   // wire sbuf_icb_rsp_hsked;
+   // wire nice_rsp_valid_sbuf;
+   // wire nice_icb_cmd_valid_sbuf;
+   // wire nice_icb_cmd_hsked;
 
-   assign sbuf_icb_cmd_hsked = (state_is_sbuf | (state_is_idle & custom3_sbuf)) & nice_icb_cmd_hsked;
-   assign sbuf_icb_rsp_hsked = state_is_sbuf & nice_icb_rsp_hsked;
-   assign sbuf_icb_rsp_hsked_last = sbuf_icb_rsp_hsked & sbuf_cnt_last;
-   assign sbuf_cnt_last = (sbuf_cnt_r == clonum);
-   //assign sbuf_cnt_clr = custom3_sbuf & nice_req_hsked;
-   assign sbuf_cnt_clr = sbuf_icb_rsp_hsked_last;
-   assign sbuf_cnt_incr = sbuf_icb_rsp_hsked & ~sbuf_cnt_last;
-   assign sbuf_cnt_ena = sbuf_cnt_clr | sbuf_cnt_incr;
-   assign sbuf_cnt_nxt =   ({ROWBUF_IDX_W{sbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
-                         | ({ROWBUF_IDX_W{sbuf_cnt_incr}} & (sbuf_cnt_r + 1'b1) )
-                         ;
+   // assign sbuf_icb_cmd_hsked = (state_is_sbuf | (state_is_idle & custom3_sbuf)) & nice_icb_cmd_hsked;
+   // assign sbuf_icb_rsp_hsked = state_is_sbuf & nice_icb_rsp_hsked;
+   // assign sbuf_icb_rsp_hsked_last = sbuf_icb_rsp_hsked & sbuf_cnt_last;
+   // assign sbuf_cnt_last = (sbuf_cnt_r == clonum);
+   // //assign sbuf_cnt_clr = custom3_sbuf & nice_req_hsked;
+   // assign sbuf_cnt_clr = sbuf_icb_rsp_hsked_last;
+   // assign sbuf_cnt_incr = sbuf_icb_rsp_hsked & ~sbuf_cnt_last;
+   // assign sbuf_cnt_ena = sbuf_cnt_clr | sbuf_cnt_incr;
+   // assign sbuf_cnt_nxt =   ({ROWBUF_IDX_W{sbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
+   //                       | ({ROWBUF_IDX_W{sbuf_cnt_incr}} & (sbuf_cnt_r + 1'b1) )
+   //                       ;
 
-   sirv_gnrl_dfflr #(ROWBUF_IDX_W)   sbuf_cnt_dfflr (sbuf_cnt_ena, sbuf_cnt_nxt, sbuf_cnt_r, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(ROWBUF_IDX_W)   sbuf_cnt_dfflr (sbuf_cnt_ena, sbuf_cnt_nxt, sbuf_cnt_r, nice_clk, nice_rst_n);
 
-   // nice_rsp_valid wait for nice_icb_rsp_valid in SBUF
-   assign nice_rsp_valid_sbuf = state_is_sbuf & sbuf_cnt_last & nice_icb_rsp_valid;
+   // // nice_rsp_valid wait for nice_icb_rsp_valid in SBUF
+   // assign nice_rsp_valid_sbuf = state_is_sbuf & sbuf_cnt_last & nice_icb_rsp_valid;
 
-   wire [ROWBUF_IDX_W-1:0] sbuf_cmd_cnt_r; 
-   wire [ROWBUF_IDX_W-1:0] sbuf_cmd_cnt_nxt; 
-   wire sbuf_cmd_cnt_clr;
-   wire sbuf_cmd_cnt_incr;
-   wire sbuf_cmd_cnt_ena;
-   wire sbuf_cmd_cnt_last;
+   // wire [ROWBUF_IDX_W-1:0] sbuf_cmd_cnt_r; 
+   // wire [ROWBUF_IDX_W-1:0] sbuf_cmd_cnt_nxt; 
+   // wire sbuf_cmd_cnt_clr;
+   // wire sbuf_cmd_cnt_incr;
+   // wire sbuf_cmd_cnt_ena;
+   // wire sbuf_cmd_cnt_last;
 
-   assign sbuf_cmd_cnt_last = (sbuf_cmd_cnt_r == clonum);
-   assign sbuf_cmd_cnt_clr = sbuf_icb_rsp_hsked_last;
-   assign sbuf_cmd_cnt_incr = sbuf_icb_cmd_hsked & ~sbuf_cmd_cnt_last;
-   assign sbuf_cmd_cnt_ena = sbuf_cmd_cnt_clr | sbuf_cmd_cnt_incr;
-   assign sbuf_cmd_cnt_nxt =   ({ROWBUF_IDX_W{sbuf_cmd_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
-                             | ({ROWBUF_IDX_W{sbuf_cmd_cnt_incr}} & (sbuf_cmd_cnt_r + 1'b1) )
-                             ;
-   sirv_gnrl_dfflr #(ROWBUF_IDX_W)   sbuf_cmd_cnt_dfflr (sbuf_cmd_cnt_ena, sbuf_cmd_cnt_nxt, sbuf_cmd_cnt_r, nice_clk, nice_rst_n);
+   // assign sbuf_cmd_cnt_last = (sbuf_cmd_cnt_r == clonum);
+   // assign sbuf_cmd_cnt_clr = sbuf_icb_rsp_hsked_last;
+   // assign sbuf_cmd_cnt_incr = sbuf_icb_cmd_hsked & ~sbuf_cmd_cnt_last;
+   // assign sbuf_cmd_cnt_ena = sbuf_cmd_cnt_clr | sbuf_cmd_cnt_incr;
+   // assign sbuf_cmd_cnt_nxt =   ({ROWBUF_IDX_W{sbuf_cmd_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
+   //                           | ({ROWBUF_IDX_W{sbuf_cmd_cnt_incr}} & (sbuf_cmd_cnt_r + 1'b1) )
+   //                           ;
+   // sirv_gnrl_dfflr #(ROWBUF_IDX_W)   sbuf_cmd_cnt_dfflr (sbuf_cmd_cnt_ena, sbuf_cmd_cnt_nxt, sbuf_cmd_cnt_r, nice_clk, nice_rst_n);
 
-   // nice_icb_cmd_valid sets when sbuf_cmd_cnt_r is not full in SBUF
-   assign nice_icb_cmd_valid_sbuf = (state_is_sbuf & (sbuf_cmd_cnt_r <= clonum) & (sbuf_cnt_r != clonum));
+   // // nice_icb_cmd_valid sets when sbuf_cmd_cnt_r is not full in SBUF
+   // assign nice_icb_cmd_valid_sbuf = (state_is_sbuf & (sbuf_cmd_cnt_r <= clonum) & (sbuf_cnt_r != clonum));
 
 
-   //////////// 3. custom3_rowsum
-   // rowbuf counter 
-   wire [ROWBUF_IDX_W-1:0] rowbuf_cnt_r; 
-   wire [ROWBUF_IDX_W-1:0] rowbuf_cnt_nxt; 
-   wire rowbuf_cnt_clr;
-   wire rowbuf_cnt_incr;
-   wire rowbuf_cnt_ena;
-   wire rowbuf_cnt_last;
-   wire rowbuf_icb_rsp_hsked;
-   wire rowbuf_rsp_hsked;
-   wire nice_rsp_valid_rowsum;
+   // //////////// 3. custom3_rowsum
+   // // rowbuf counter 
+   // wire [ROWBUF_IDX_W-1:0] rowbuf_cnt_r; 
+   // wire [ROWBUF_IDX_W-1:0] rowbuf_cnt_nxt; 
+   // wire rowbuf_cnt_clr;
+   // wire rowbuf_cnt_incr;
+   // wire rowbuf_cnt_ena;
+   // wire rowbuf_cnt_last;
+   // wire rowbuf_icb_rsp_hsked;
+   // wire rowbuf_rsp_hsked;
+   // wire nice_rsp_valid_rowsum;
 
-   assign rowbuf_rsp_hsked = nice_rsp_valid_rowsum & nice_rsp_ready;
-   assign rowbuf_icb_rsp_hsked = state_is_rowsum & nice_icb_rsp_hsked;
-   assign rowbuf_cnt_last = (rowbuf_cnt_r == clonum);
-   assign rowbuf_cnt_clr = rowbuf_icb_rsp_hsked & rowbuf_cnt_last;
-   assign rowbuf_cnt_incr = rowbuf_icb_rsp_hsked & ~rowbuf_cnt_last;
-   assign rowbuf_cnt_ena = rowbuf_cnt_clr | rowbuf_cnt_incr;
-   assign rowbuf_cnt_nxt =   ({ROWBUF_IDX_W{rowbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
-                           | ({ROWBUF_IDX_W{rowbuf_cnt_incr}} & (rowbuf_cnt_r + 1'b1))
-                           ;
-   //assign nice_icb_cmd_valid_rowbuf =   (state_is_idle & custom3_rowsum)
-   //                                  | (state_is_rowsum & (rowbuf_cnt_r <= clonum) & (clonum != 0))
-   //                                  ;
+   // assign rowbuf_rsp_hsked = nice_rsp_valid_rowsum & nice_rsp_ready;
+   // assign rowbuf_icb_rsp_hsked = state_is_rowsum & nice_icb_rsp_hsked;
+   // assign rowbuf_cnt_last = (rowbuf_cnt_r == clonum);
+   // assign rowbuf_cnt_clr = rowbuf_icb_rsp_hsked & rowbuf_cnt_last;
+   // assign rowbuf_cnt_incr = rowbuf_icb_rsp_hsked & ~rowbuf_cnt_last;
+   // assign rowbuf_cnt_ena = rowbuf_cnt_clr | rowbuf_cnt_incr;
+   // assign rowbuf_cnt_nxt =   ({ROWBUF_IDX_W{rowbuf_cnt_clr }} & {ROWBUF_IDX_W{1'b0}})
+   //                         | ({ROWBUF_IDX_W{rowbuf_cnt_incr}} & (rowbuf_cnt_r + 1'b1))
+   //                         ;
+   // //assign nice_icb_cmd_valid_rowbuf =   (state_is_idle & custom3_rowsum)
+   // //                                  | (state_is_rowsum & (rowbuf_cnt_r <= clonum) & (clonum != 0))
+   // //                                  ;
 
-   sirv_gnrl_dfflr #(ROWBUF_IDX_W)   rowbuf_cnt_dfflr (rowbuf_cnt_ena, rowbuf_cnt_nxt, rowbuf_cnt_r, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(ROWBUF_IDX_W)   rowbuf_cnt_dfflr (rowbuf_cnt_ena, rowbuf_cnt_nxt, rowbuf_cnt_r, nice_clk, nice_rst_n);
 
-   // recieve data buffer, to make sure rowsum ops come from registers 
-   wire rcv_data_buf_ena;
-   wire rcv_data_buf_set;
-   wire rcv_data_buf_clr;
-   wire rcv_data_buf_valid;
-   wire [`E203_XLEN-1:0] rcv_data_buf; 
-   wire [ROWBUF_IDX_W-1:0] rcv_data_buf_idx; 
-   wire [ROWBUF_IDX_W-1:0] rcv_data_buf_idx_nxt; 
+   // // recieve data buffer, to make sure rowsum ops come from registers 
+   // wire rcv_data_buf_ena;
+   // wire rcv_data_buf_set;
+   // wire rcv_data_buf_clr;
+   // wire rcv_data_buf_valid;
+   // wire [`E203_XLEN-1:0] rcv_data_buf; 
+   // wire [ROWBUF_IDX_W-1:0] rcv_data_buf_idx; 
+   // wire [ROWBUF_IDX_W-1:0] rcv_data_buf_idx_nxt; 
 
-   assign rcv_data_buf_set = rowbuf_icb_rsp_hsked;
-   assign rcv_data_buf_clr = rowbuf_rsp_hsked;
-   assign rcv_data_buf_ena = rcv_data_buf_clr | rcv_data_buf_set;
-   assign rcv_data_buf_idx_nxt =   ({ROWBUF_IDX_W{rcv_data_buf_clr}} & {ROWBUF_IDX_W{1'b0}})
-                                 | ({ROWBUF_IDX_W{rcv_data_buf_set}} & rowbuf_cnt_r        );
+   // assign rcv_data_buf_set = rowbuf_icb_rsp_hsked;
+   // assign rcv_data_buf_clr = rowbuf_rsp_hsked;
+   // assign rcv_data_buf_ena = rcv_data_buf_clr | rcv_data_buf_set;
+   // assign rcv_data_buf_idx_nxt =   ({ROWBUF_IDX_W{rcv_data_buf_clr}} & {ROWBUF_IDX_W{1'b0}})
+   //                               | ({ROWBUF_IDX_W{rcv_data_buf_set}} & rowbuf_cnt_r        );
 
-   sirv_gnrl_dfflr #(1)   rcv_data_buf_valid_dfflr (1'b1, rcv_data_buf_ena, rcv_data_buf_valid, nice_clk, nice_rst_n);
-   sirv_gnrl_dfflr #(`E203_XLEN)   rcv_data_buf_dfflr (rcv_data_buf_ena, nice_icb_rsp_rdata, rcv_data_buf, nice_clk, nice_rst_n);
-   sirv_gnrl_dfflr #(ROWBUF_IDX_W)   rowbuf_cnt_d_dfflr (rcv_data_buf_ena, rcv_data_buf_idx_nxt, rcv_data_buf_idx, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(1)   rcv_data_buf_valid_dfflr (1'b1, rcv_data_buf_ena, rcv_data_buf_valid, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(`E203_XLEN)   rcv_data_buf_dfflr (rcv_data_buf_ena, nice_icb_rsp_rdata, rcv_data_buf, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(ROWBUF_IDX_W)   rowbuf_cnt_d_dfflr (rcv_data_buf_ena, rcv_data_buf_idx_nxt, rcv_data_buf_idx, nice_clk, nice_rst_n);
 
-   // rowsum accumulator 
-   wire [`E203_XLEN-1:0] rowsum_acc_r;
-   wire [`E203_XLEN-1:0] rowsum_acc_nxt;
-   wire [`E203_XLEN-1:0] rowsum_acc_adder;
-   wire rowsum_acc_ena;
-   wire rowsum_acc_set;
-   wire rowsum_acc_flg;
-   wire nice_icb_cmd_valid_rowsum;
-   wire [`E203_XLEN-1:0] rowsum_res;
+   // // rowsum accumulator 
+   // wire [`E203_XLEN-1:0] rowsum_acc_r;
+   // wire [`E203_XLEN-1:0] rowsum_acc_nxt;
+   // wire [`E203_XLEN-1:0] rowsum_acc_adder;
+   // wire rowsum_acc_ena;
+   // wire rowsum_acc_set;
+   // wire rowsum_acc_flg;
+   // wire nice_icb_cmd_valid_rowsum;
+   // wire [`E203_XLEN-1:0] rowsum_res;
 
-   assign rowsum_acc_set = rcv_data_buf_valid & (rcv_data_buf_idx == {ROWBUF_IDX_W{1'b0}});
-   assign rowsum_acc_flg = rcv_data_buf_valid & (rcv_data_buf_idx != {ROWBUF_IDX_W{1'b0}});
-   assign rowsum_acc_adder = rcv_data_buf + rowsum_acc_r;
-   assign rowsum_acc_ena = rowsum_acc_set | rowsum_acc_flg;
-   assign rowsum_acc_nxt =   ({`E203_XLEN{rowsum_acc_set}} & rcv_data_buf)
-                           | ({`E203_XLEN{rowsum_acc_flg}} & rowsum_acc_adder)
-                           ;
+   // assign rowsum_acc_set = rcv_data_buf_valid & (rcv_data_buf_idx == {ROWBUF_IDX_W{1'b0}});
+   // assign rowsum_acc_flg = rcv_data_buf_valid & (rcv_data_buf_idx != {ROWBUF_IDX_W{1'b0}});
+   // assign rowsum_acc_adder = rcv_data_buf + rowsum_acc_r;
+   // assign rowsum_acc_ena = rowsum_acc_set | rowsum_acc_flg;
+   // assign rowsum_acc_nxt =   ({`E203_XLEN{rowsum_acc_set}} & rcv_data_buf)
+   //                         | ({`E203_XLEN{rowsum_acc_flg}} & rowsum_acc_adder)
+   //                         ;
  
-   sirv_gnrl_dfflr #(`E203_XLEN)   rowsum_acc_dfflr (rowsum_acc_ena, rowsum_acc_nxt, rowsum_acc_r, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(`E203_XLEN)   rowsum_acc_dfflr (rowsum_acc_ena, rowsum_acc_nxt, rowsum_acc_r, nice_clk, nice_rst_n);
 
-   assign rowsum_done = state_is_rowsum & nice_rsp_hsked;
-   assign rowsum_res  = rowsum_acc_r;
+   // assign rowsum_done = state_is_rowsum & nice_rsp_hsked;
+   // assign rowsum_res  = rowsum_acc_r;
 
-   // rowsum finishes when the last acc data is added to rowsum_acc_r  
-   assign nice_rsp_valid_rowsum = state_is_rowsum & (rcv_data_buf_idx == clonum) & ~rowsum_acc_flg;
+   // // rowsum finishes when the last acc data is added to rowsum_acc_r  
+   // assign nice_rsp_valid_rowsum = state_is_rowsum & (rcv_data_buf_idx == clonum) & ~rowsum_acc_flg;
 
-   // nice_icb_cmd_valid sets when rcv_data_buf_idx is not full in LBUF
-   assign nice_icb_cmd_valid_rowsum = state_is_rowsum & (rcv_data_buf_idx < clonum) & ~rowsum_acc_flg;
+   // // nice_icb_cmd_valid sets when rcv_data_buf_idx is not full in LBUF
+   // assign nice_icb_cmd_valid_rowsum = state_is_rowsum & (rcv_data_buf_idx < clonum) & ~rowsum_acc_flg;
 
-   //////////// rowbuf
-   // rowbuf access list:
-   //  1. lbuf will write to rowbuf, write data comes from memory, data length is defined by clonum 
-   //  2. sbuf will read from rowbuf, and store it to memory, data length is defined by clonum 
-   //  3. rowsum will accumulate data, and store to rowbuf, data length is defined by clonum 
-   wire [`E203_XLEN-1:0] rowbuf_r [ROWBUF_DP-1:0];
-   wire [`E203_XLEN-1:0] rowbuf_wdat [ROWBUF_DP-1:0];
-   wire [ROWBUF_DP-1:0]  rowbuf_we;
-   wire [ROWBUF_IDX_W-1:0] rowbuf_idx_mux; 
-   wire [`E203_XLEN-1:0] rowbuf_wdat_mux; 
-   wire rowbuf_wr_mux; 
-   //wire [ROWBUF_IDX_W-1:0] sbuf_idx; 
+   // //////////// rowbuf
+   // // rowbuf access list:
+   // //  1. lbuf will write to rowbuf, write data comes from memory, data length is defined by clonum 
+   // //  2. sbuf will read from rowbuf, and store it to memory, data length is defined by clonum 
+   // //  3. rowsum will accumulate data, and store to rowbuf, data length is defined by clonum 
+   // wire [`E203_XLEN-1:0] rowbuf_r [ROWBUF_DP-1:0];
+   // wire [`E203_XLEN-1:0] rowbuf_wdat [ROWBUF_DP-1:0];
+   // wire [ROWBUF_DP-1:0]  rowbuf_we;
+   // wire [ROWBUF_IDX_W-1:0] rowbuf_idx_mux; 
+   // wire [`E203_XLEN-1:0] rowbuf_wdat_mux; 
+   // wire rowbuf_wr_mux; 
+   // //wire [ROWBUF_IDX_W-1:0] sbuf_idx; 
    
-   // lbuf write to rowbuf
-   wire [ROWBUF_IDX_W-1:0] lbuf_idx = lbuf_cnt_r; 
-   wire lbuf_wr = lbuf_icb_rsp_hsked; 
-   wire [`E203_XLEN-1:0] lbuf_wdata = nice_icb_rsp_rdata;
+   // // lbuf write to rowbuf
+   // wire [ROWBUF_IDX_W-1:0] lbuf_idx = lbuf_cnt_r; 
+   // wire lbuf_wr = lbuf_icb_rsp_hsked; 
+   // wire [`E203_XLEN-1:0] lbuf_wdata = nice_icb_rsp_rdata;
 
-   // rowsum write to rowbuf(column accumulated data)
-   wire [ROWBUF_IDX_W-1:0] rowsum_idx = rcv_data_buf_idx; 
-   wire rowsum_wr = rcv_data_buf_valid; 
-   wire [`E203_XLEN-1:0] rowsum_wdata = rowbuf_r[rowsum_idx] + rcv_data_buf;
+   // // rowsum write to rowbuf(column accumulated data)
+   // wire [ROWBUF_IDX_W-1:0] rowsum_idx = rcv_data_buf_idx; 
+   // wire rowsum_wr = rcv_data_buf_valid; 
+   // wire [`E203_XLEN-1:0] rowsum_wdata = rowbuf_r[rowsum_idx] + rcv_data_buf;
 
-   // rowbuf write mux
-   assign rowbuf_wdat_mux =   ({`E203_XLEN{lbuf_wr  }} & lbuf_wdata  )
-                            | ({`E203_XLEN{rowsum_wr}} & rowsum_wdata)
-                            ;
-   assign rowbuf_wr_mux   =  lbuf_wr | rowsum_wr;
-   assign rowbuf_idx_mux  =   ({ROWBUF_IDX_W{lbuf_wr  }} & lbuf_idx  )
-                            | ({ROWBUF_IDX_W{rowsum_wr}} & rowsum_idx)
-                            ;  
+   // // rowbuf write mux
+   // assign rowbuf_wdat_mux =   ({`E203_XLEN{lbuf_wr  }} & lbuf_wdata  )
+   //                          | ({`E203_XLEN{rowsum_wr}} & rowsum_wdata)
+   //                          ;
+   // assign rowbuf_wr_mux   =  lbuf_wr | rowsum_wr;
+   // assign rowbuf_idx_mux  =   ({ROWBUF_IDX_W{lbuf_wr  }} & lbuf_idx  )
+   //                          | ({ROWBUF_IDX_W{rowsum_wr}} & rowsum_idx)
+   //                          ;  
 
-   // rowbuf inst
-   genvar i;
-   generate 
-     for (i=0; i<ROWBUF_DP; i=i+1) begin:gen_rowbuf
-       assign rowbuf_we[i] =   (rowbuf_wr_mux & (rowbuf_idx_mux == i[ROWBUF_IDX_W-1:0]))
-                             ;
+   // // rowbuf inst
+   // genvar i;
+   // generate 
+   //   for (i=0; i<ROWBUF_DP; i=i+1) begin:gen_rowbuf
+   //     assign rowbuf_we[i] =   (rowbuf_wr_mux & (rowbuf_idx_mux == i[ROWBUF_IDX_W-1:0]))
+   //                           ;
   
-       assign rowbuf_wdat[i] =   ({`E203_XLEN{rowbuf_we[i]}} & rowbuf_wdat_mux   )
-                               ;
+   //     assign rowbuf_wdat[i] =   ({`E203_XLEN{rowbuf_we[i]}} & rowbuf_wdat_mux   )
+   //                             ;
   
-       sirv_gnrl_dfflr #(`E203_XLEN) rowbuf_dfflr (rowbuf_we[i], rowbuf_wdat[i], rowbuf_r[i], nice_clk, nice_rst_n);
-     end
-   endgenerate
+   //     sirv_gnrl_dfflr #(`E203_XLEN) rowbuf_dfflr (rowbuf_we[i], rowbuf_wdat[i], rowbuf_r[i], nice_clk, nice_rst_n);
+   //   end
+   // endgenerate
 
-   //////////// mem aacess addr management
-   wire [`E203_XLEN-1:0] maddr_acc_r; 
-   assign nice_icb_cmd_hsked = nice_icb_cmd_valid & nice_icb_cmd_ready; 
-   // custom3_lbuf 
-   //wire [`E203_XLEN-1:0] lbuf_maddr    = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
-   wire lbuf_maddr_ena    =   (state_is_idle & custom3_lbuf & nice_icb_cmd_hsked)
-                            | (state_is_lbuf & nice_icb_cmd_hsked)
-                            ;
+   // //////////// mem aacess addr management
+   // wire [`E203_XLEN-1:0] maddr_acc_r; 
+   // assign nice_icb_cmd_hsked = nice_icb_cmd_valid & nice_icb_cmd_ready; 
+   // // custom3_lbuf 
+   // //wire [`E203_XLEN-1:0] lbuf_maddr    = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
+   // wire lbuf_maddr_ena    =   (state_is_idle & custom3_lbuf & nice_icb_cmd_hsked)
+   //                          | (state_is_lbuf & nice_icb_cmd_hsked)
+   //                          ;
 
-   // custom3_sbuf 
-   //wire [`E203_XLEN-1:0] sbuf_maddr    = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
-   wire sbuf_maddr_ena    =   (state_is_idle & custom3_sbuf & nice_icb_cmd_hsked)
-                            | (state_is_sbuf & nice_icb_cmd_hsked)
-                            ;
+   // // custom3_sbuf 
+   // //wire [`E203_XLEN-1:0] sbuf_maddr    = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
+   // wire sbuf_maddr_ena    =   (state_is_idle & custom3_sbuf & nice_icb_cmd_hsked)
+   //                          | (state_is_sbuf & nice_icb_cmd_hsked)
+   //                          ;
 
-   // custom3_rowsum
-   //wire [`E203_XLEN-1:0] rowsum_maddr  = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
-   wire rowsum_maddr_ena  =   (state_is_idle & custom3_rowsum & nice_icb_cmd_hsked)
-                            | (state_is_rowsum & nice_icb_cmd_hsked)
-                            ;
+   // // custom3_rowsum
+   // //wire [`E203_XLEN-1:0] rowsum_maddr  = state_is_idle ? nice_req_rs1 : maddr_acc_r ; 
+   // wire rowsum_maddr_ena  =   (state_is_idle & custom3_rowsum & nice_icb_cmd_hsked)
+   //                          | (state_is_rowsum & nice_icb_cmd_hsked)
+   //                          ;
 
-   // maddr acc 
-   //wire  maddr_incr = lbuf_maddr_ena | sbuf_maddr_ena | rowsum_maddr_ena | rbuf_maddr_ena;
-   wire  maddr_ena = lbuf_maddr_ena | sbuf_maddr_ena | rowsum_maddr_ena;
-   wire  maddr_ena_idle = maddr_ena & state_is_idle;
+   // // maddr acc 
+   // //wire  maddr_incr = lbuf_maddr_ena | sbuf_maddr_ena | rowsum_maddr_ena | rbuf_maddr_ena;
+   // wire  maddr_ena = lbuf_maddr_ena | sbuf_maddr_ena | rowsum_maddr_ena;
+   // wire  maddr_ena_idle = maddr_ena & state_is_idle;
 
-   wire [`E203_XLEN-1:0] maddr_acc_op1 = maddr_ena_idle ? nice_req_rs1 : maddr_acc_r; // not reused
-   wire [`E203_XLEN-1:0] maddr_acc_op2 = maddr_ena_idle ? `E203_XLEN'h4 : `E203_XLEN'h4; 
+   // wire [`E203_XLEN-1:0] maddr_acc_op1 = maddr_ena_idle ? nice_req_rs1 : maddr_acc_r; // not reused
+   // wire [`E203_XLEN-1:0] maddr_acc_op2 = maddr_ena_idle ? `E203_XLEN'h4 : `E203_XLEN'h4; 
 
-   wire [`E203_XLEN-1:0] maddr_acc_next = maddr_acc_op1 + maddr_acc_op2;
-   wire  maddr_acc_ena = maddr_ena;
+   // wire [`E203_XLEN-1:0] maddr_acc_next = maddr_acc_op1 + maddr_acc_op2;
+   // wire  maddr_acc_ena = maddr_ena;
 
-   sirv_gnrl_dfflr #(`E203_XLEN)   maddr_acc_dfflr (maddr_acc_ena, maddr_acc_next, maddr_acc_r, nice_clk, nice_rst_n);
+   // sirv_gnrl_dfflr #(`E203_XLEN)   maddr_acc_dfflr (maddr_acc_ena, maddr_acc_next, maddr_acc_r, nice_clk, nice_rst_n);
 
    ////////////////////////////////////////////////////////////
    // Control cmd_req
@@ -524,7 +528,8 @@ module e203_subsys_nice_core (
 
    //assign nice_icb_cmd_wmask = {`sirv_XLEN_MW{custom3_sbuf}} & 4'b1111;
    assign nice_icb_cmd_size  = 2'b10;
-   assign nice_mem_holdup    = state_is_compute; 
+   // assign nice_mem_holdup    = state_is_compute; 
+   assign nice_mem_holdup    = 1'b0; 
 
    ////////////////////////////////////////////////////////////
    // nice_active
